@@ -1,0 +1,52 @@
+{
+  "data": [
+    {
+      "url": "/install/",
+      "re": "aspcms",
+      "name": "AspCMS",
+      "md5": ""
+    },
+    {
+      "url": "/DM-static/assets/cssjs/DM.js?v=2003",
+      "re": "",
+      "name": "DM建站",
+      "md5": "283266898d658c93d30446217d2a9d4b"
+    },
+    {
+      "url": "/about/_notes/dwsync.xml",
+      "re": "aspcms",
+      "name": "AspCMS",
+      "md5": ""
+    },
+    {
+      "url": "/admin/_Style/_notes/dwsync.xml",
+      "re": "aspcms",
+      "name": "AspCMS",
+      "md5": ""
+    },
+    {
+      "url": "/templates/defaultimages/btn_search_bg.gif",
+      "re": "",
+      "name": "SupeSite",
+      "md5": "606092bf56c4c08b8a17a11e58a764c9"
+    },
+    {
+      "url": "/favicon.ico",
+      "re": "",
+      "name": "Discuz",
+      "md5": "e8535ded975539ff5d90087d0a463f3e"
+    },
+    {
+      "url": "/robots.txt",
+      "re": "",
+      "name": "dedecms",
+      "md5": "f3044cfb1433ee745f654ce8b64c8fc0"
+    },
+    {
+      "url": "/DM-static/assets/cssjs/DM.js?v=",
+      "re": "",
+      "name": "DM建站",
+      "md5": "efc26e10d04c95ba33a74bae7755a476"
+    }
+  ]
+}

@@ -1,7 +1,3 @@
+swiftcolud
 www
-test
-peiqi
-ctf
-plat
-go
-vulns
+login.exs
