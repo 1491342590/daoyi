@@ -56,7 +56,7 @@ class SubdomainBlast():
 
     # 测试网站：http://swiftcolud.cn/about.html
     def fingerscan(self, domain):
-        cms = open('cms.json', 'r', encoding="utf-8").read()
+        cms = open('test/cms.json', 'r', encoding="utf-8").read()
         for c in json.loads(cms)['data']:
             # 先判断re
             if c['re'] == '':
@@ -82,7 +82,7 @@ class SubdomainBlast():
         if is_analysis is False:
             domain_list = []
             # 循环爆破域名
-            for s_domain in open('domain.txt', 'r').readlines():
+            for s_domain in open('test/domain.txt', 'r').readlines():
                 # 去除每行末尾的换行符 \n
                 s_domain = s_domain.replace('\n', '')
                 try:
