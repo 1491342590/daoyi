@@ -3,12 +3,14 @@ import requests
 
 class DirScan():
     def run(self, url, dir_dict):
+        dic_list = []
         dics = open(dir_dict, 'r').readlines()
         for dic in dics:
             res = requests.get(url + dic.replace('\n', '')).status_code
             if res != 404:
-                print(url + dic.replace('\n', ''))
+                dic_list.append(url + dic.replace('\n', ''))
+        return dic_list
 
 
-dir_scan = DirScan()
-dir_scan.run()
+# dir_scan = DirScan()
+# dir_scan.run('https://gbdsj.gd.gov.cn/gkmlpt/', 'test/dict.txt')
